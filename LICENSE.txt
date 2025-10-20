@@ -1,0 +1,6 @@
+Copyright (c) 2025 Gabriel Simões
+
+Todos os direitos reservados.
+
+Este código não pode ser copiado, modificado, distribuído ou utilizado,
+total ou parcialmente, sem permissão expressa e por escrito do autor.
