@@ -1,197 +1,92 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<conio.h>
-#include<math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <conio.h>
+#include <math.h>
 #include <time.h>
+
+#define MAP_WIDTH 10
+#define MAP_HEIGHT 10
+#define NUM_ATTRIBUTES 14
+#define MAX_SAMPLES 178
 
 int main()
 {
-    int i=0;
-    int j,l;
-    int n,m;
-    int cs;
-    float er;
-    float I0[15],O0[15],I1[15],O1[15],I2[13],O2[13];
-    float  w1[15][14] ,w2[15][13];
-    float nw1[15][14],nw2[15][13];
-    float vw1[15][14],vw2[15][13];
-    float d2[13],d1[14];
+    // Verificar se a classe deve ser separada do mapa de kohonen mesmo
 
-    float E1[150];
-    float E2[150];
-    float E3[150];
-    float E4[150];
-    float t1[150];
-    float t2[150];
-    float t3[150];
+    int i = 0;
+    int j, n;
 
-    clock_t inicio, fim;
-    double tempo_exec;
+    float mapa[MAP_HEIGHT][MAP_WIDTH][NUM_ATTRIBUTES];
 
-    inicio = clock();
+    // int n,m;
+    // int cs;
+    // float er;
+    // float I0[15],O0[15],I1[15],O1[15],I2[13],O2[13];
+    // float  w1[15][14] ,w2[15][13];
+    // float nw1[15][14],nw2[15][13];
+    // float vw1[15][14],vw2[15][13];
+    // float d2[13],d1[14];
 
-    //LEITURA DOS DADOS DA IRIS
+    float E1[MAX_SAMPLES], E2[MAX_SAMPLES], E3[MAX_SAMPLES], E4[MAX_SAMPLES], E5[MAX_SAMPLES], E6[MAX_SAMPLES], E7[MAX_SAMPLES], 
+    E8[MAX_SAMPLES], E9[MAX_SAMPLES], E10[MAX_SAMPLES], E11[MAX_SAMPLES], E12[MAX_SAMPLES], E13[MAX_SAMPLES], E14[MAX_SAMPLES];
+
+    // LEITURA DOS DADOS
     FILE *in;
 
-    if ((in =fopen("irisdata.txt", "rt"))== NULL)
+    if ((in = fopen("wine.data", "rt")) == NULL)
     {
-       printf("Cannot open input file.\n");
-       return 1;
+        printf("Cannot open input file.\n");
+        return 1;
     }
 
-    while(!feof(in))
+    while (!feof(in) && i < 150)
     {
-        fscanf(in,"%f%f%f%f%f%f%f",&E1[i],&E2[i],&E3[i],&E4[i],&t1[i],&t2[i],&t3[i]);
-        i++;
-    }
+        int result = fscanf(in, "%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f",
+                            &E1[i], &E2[i], &E3[i], &E4[i], &E5[i], &E6[i],
+                            &E7[i], &E8[i], &E9[i], &E10[i], &E11[i], &E12[i], &E13[i], &E14[i]);
 
-    for(j=0;j<(i-1);j++){
-        printf("%d %f %f %f %f %f %f %f\n",j,E1[j],E2[j],E3[j],E4[j],t1[j],t2[j],t3[j]);
-    }
-
-    // fclose(in);
-    // getch();
-
-    //INICIALIZACAO DOS PESOS
-    for(j=1;j<=3;j++){
-        for(i=1;i<=5;i++){
-            w1[i][j]=((rand()%100)/10.0)-5.0;
-            vw1[i][j]=0.0;
+        if (result == 14)
+        {
+            i++;
+        }
+        else
+        {
+            break;
         }
     }
 
-    for(l=1;l<=3;l++){
-        for(j=1;j<=4;j++){
-            w2[j][l]=((rand()%100)/10.0)-5.0;
-            vw2[j][l]=0.0;
+    // printf("Total de amostras lidas: %d\n", i);
+    // for (j = 0; j < i; j++)
+    // {
+    //     printf("Amostra %d - Classe: %d | Atributos: %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n",
+    //            j, E1[j], E2[j], E3[j], E4[j], E5[j], E6[j], E7[j], E8[j], E9[j], E10[j], E11[j], E12[j], E13[j]);
+    // }
+
+    srand(time(NULL));
+    
+    for (i = 0; i < MAP_HEIGHT; i++) // linha
+    {
+        for (j = 0; j < MAP_WIDTH; j++) // coluna
+        {
+            for (n = 0; n < NUM_ATTRIBUTES; n++) // atributo
+            {
+                mapa[i][j][n] = (float)rand() / RAND_MAX;
+            }
         }
     }
+    // Mostrar uma representação visual do mapa
+    printf("\n=== MAPA INICIAL (Pesos Aleatórios) ===\n");
 
-    for (m=0;m<=1000;m++) {
-        er=0.0;
-        for(n=0;n<=15000;n++) {
-
-            //BACK PROPAGATION
-
-            cs=rand()%150;
-
-
-            I0[1]=E1[cs];
-            I0[2]=E2[cs];
-            I0[3]=E3[cs];
-            I0[4]=E4[cs];
-            I0[5]=1.0;
-
-            O0[1]=I0[1];
-            O0[2]=I0[2];
-            O0[3]=I0[3];
-            O0[4]=I0[4];
-            O0[5]=I0[5];
-
-            for (j=1;j<=3;j++) {
-                I1[j]=0.0;
-
-                for (i=1;i<=5;i++) {
-                    I1[j]+=O0[i]*w1[i][j];
-                }
-
-                O1[j]=1.0/(1.0+exp(-I1[j]));
-            }
-
-            I1[4]=1.0;
-            O1[5]=I1[4];
-
-            for(l=1;l<=3;l++){
-                I2[l]=0.0;
-
-                for(j=1;j<=4;j++){
-                    I2[l]+=O1[j]*w2[j][l];
-                }
-
-                O2[l]=1.0/(1.0+exp(-I2[l]));
-            }
-
-            // BACK PROPAGATION
-
-            d2[1]=(t1[cs]-O2[1])*O2[1]*(1.0-O2[1]);
-            d2[2]=(t2[cs]-O2[2])*O2[2]*(1.0-O2[2]);
-            d2[3]=(t3[cs]-O2[3])*O2[3]*(1.0-O2[3]);
-
-            d1[1]=O1[1]*(1.0-O1[1])*(d2[1]*w2[1][1]+d2[2]*w2[1][2]+d2[3]*w2[1][3]);
-            d1[2]=O1[2]*(1.0-O1[2])*(d2[1]*w2[2][1]+d2[2]*w2[2][2]+d2[3]*w2[2][3]);
-            d1[3]=O1[3]*(1.0-O1[3])*(d2[1]*w2[3][1]+d2[2]*w2[3][2]+d2[3]*w2[3][3]);
-
-            for(l=1;l<=3;l++){
-                for(j=1;j<=4;j++){
-                    nw2[j][l]=w2[j][l]+0.5*d2[l]*O1[j]+0.5*vw2[j][l];
-                    vw2[j][l]=nw2[j][l]-w2[j][l];
-                    w2[j][l]=nw2[j][l];
-                }
-            }
-
-            for (j=1;j<=3;j++) {
-                for (i=1;i<=5;i++) {
-                    nw1[i][j]=w1[i][j]+0.5*d1[j]*O0[i]+0.5*vw1[i][j];
-                    vw1[i][j]=nw1[i][j]-w1[i][j];
-                    w1[i][j]=nw1[i][j];
-                }
-            }
-
-            er+= (t1[cs]-O2[1])*(t1[cs]-O2[1])+(t2[cs]-O2[2])*(t2[cs]-O2[2])+(t3[cs]-O2[3])*(t3[cs]-O2[3]);
+    for (i = 0; i < MAP_HEIGHT; i++)
+    {
+        for (j = 0; j < MAP_WIDTH; j++)
+        {
+            // Mostrar o primeiro peso (índice 0) de cada neurônio
+            printf("%.2f ", mapa[i][j][0]);
         }
-        er = er/15000.0;
-        printf("%d %f \n", m, er);
+        printf("\n");
     }
-
-
-    int acertos = 0;
-    for (cs=0; cs<150; cs++) {
-        I0[1]=E1[cs];
-        I0[2]=E2[cs];
-        I0[3]=E3[cs];
-        I0[4]=E4[cs];
-        I0[5]=1.0;
-
-        for (i=1;i<=5;i++) O0[i]=I0[i];
-
-        for (j=1;j<=3;j++) {
-            I1[j]=0.0;
-            for (i=1;i<=5;i++) {
-                I1[j]+=O0[i]*w1[i][j];
-            }
-            O1[j]=1.0/(1.0+exp(-I1[j]));
-        }
-        O1[4]=1.0;
-
-        for(l=1;l<=3;l++){
-            I2[l]=0.0;
-            for(j=1;j<=4;j++){
-                I2[l]+=O1[j]*w2[j][l];
-            }
-            O2[l]=1.0/(1.0+exp(-I2[l]));
-        }
-
-        int pred = 1;
-        if (O2[2] > O2[pred]) pred = 2;
-        if (O2[3] > O2[pred]) pred = 3;
-
-        int real = 1;
-        if (t2[cs] == 1.0) real = 2;
-        if (t3[cs] == 1.0) real = 3;
-
-        if (pred == real) acertos++;
-
-        printf("Amostra %d -> Saidas: [%.3f %.3f %.3f]  Previsto=%d Real=%d\n",
-               cs, O2[1], O2[2], O2[3], pred, real);
-    }
-
-    printf("\nAcuracia final = %.2f%%\n", (acertos/150.0)*100.0);
-
-    fim = clock();
-    tempo_exec = ((double)(fim - inicio)) / CLOCKS_PER_SEC;
-    printf("\nTempo total de execucao: %.3f segundos\n", tempo_exec);
-
+    
     fclose(in);
-    getch();
-
+    return 0;
 }
