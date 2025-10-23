@@ -4,31 +4,23 @@
 #include <math.h>
 #include <time.h>
 
-#define MAP_WIDTH 10
-#define MAP_HEIGHT 10
-#define NUM_ATTRIBUTES 14
-#define MAX_SAMPLES 178
+#define MAPA_LADO_X 10
+#define MAPA_LADO_Y 10
+#define DIMENSOES 14
+#define AMOSTRAS 178
+#define ITERACOES_MAX 5000 // at least 500 times the number of network units
+
+#define ALPHA_INICIAL 0.6
+#define RAIO_INICIAL ((MAPA_LADO_X > MAPA_LADO_Y ? MAPA_LADO_X : MAPA_LADO_Y) / 2.0)
+#define TEMPO_CONSTANTE (ITERACOES_MAX / 4.0) // Constante de tempo para decaimento
 
 int main()
 {
     // Verificar se a classe deve ser separada do mapa de kohonen mesmo
+    int x, y, d;
+    float mapa[MAPA_LADO_X][MAPA_LADO_Y][DIMENSOES];
 
-    int i = 0;
-    int j, n;
-
-    float mapa[MAP_HEIGHT][MAP_WIDTH][NUM_ATTRIBUTES];
-
-    // int n,m;
-    // int cs;
-    // float er;
-    // float I0[15],O0[15],I1[15],O1[15],I2[13],O2[13];
-    // float  w1[15][14] ,w2[15][13];
-    // float nw1[15][14],nw2[15][13];
-    // float vw1[15][14],vw2[15][13];
-    // float d2[13],d1[14];
-
-    float E1[MAX_SAMPLES], E2[MAX_SAMPLES], E3[MAX_SAMPLES], E4[MAX_SAMPLES], E5[MAX_SAMPLES], E6[MAX_SAMPLES], E7[MAX_SAMPLES], 
-    E8[MAX_SAMPLES], E9[MAX_SAMPLES], E10[MAX_SAMPLES], E11[MAX_SAMPLES], E12[MAX_SAMPLES], E13[MAX_SAMPLES], E14[MAX_SAMPLES];
+    float dados_entrada[AMOSTRAS][DIMENSOES];
 
     // LEITURA DOS DADOS
     FILE *in;
@@ -39,15 +31,19 @@ int main()
         return 1;
     }
 
-    while (!feof(in) && i < 150)
+    x = 0;
+    while (!feof(in) && x < AMOSTRAS)
     {
-        int result = fscanf(in, "%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f",
-                            &E1[i], &E2[i], &E3[i], &E4[i], &E5[i], &E6[i],
-                            &E7[i], &E8[i], &E9[i], &E10[i], &E11[i], &E12[i], &E13[i], &E14[i]);
+        int result = fscanf(in, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f",
+                            &dados_entrada[x][0], &dados_entrada[x][1], &dados_entrada[x][2],
+                            &dados_entrada[x][3], &dados_entrada[x][4], &dados_entrada[x][5],
+                            &dados_entrada[x][6], &dados_entrada[x][7], &dados_entrada[x][8],
+                            &dados_entrada[x][9], &dados_entrada[x][10], &dados_entrada[x][11],
+                            &dados_entrada[x][12], &dados_entrada[x][13]);
 
         if (result == 14)
         {
-            i++;
+            x++;
         }
         else
         {
@@ -62,31 +58,97 @@ int main()
     //            j, E1[j], E2[j], E3[j], E4[j], E5[j], E6[j], E7[j], E8[j], E9[j], E10[j], E11[j], E12[j], E13[j]);
     // }
 
-    srand(time(NULL));
-    
-    for (i = 0; i < MAP_HEIGHT; i++) // linha
+    // srand(time(NULL)); verificar se é necessario usar essa seed
+
+    for (x = 0; x < MAPA_LADO_X; x++) // linha
     {
-        for (j = 0; j < MAP_WIDTH; j++) // coluna
+        for (y = 0; y < MAPA_LADO_Y; y++) // coluna
         {
-            for (n = 0; n < NUM_ATTRIBUTES; n++) // atributo
+            for (d = 0; d < DIMENSOES; d++) // atributo/peso
             {
-                mapa[i][j][n] = (float)rand() / RAND_MAX;
+                mapa[x][y][d] = (float)rand() / RAND_MAX;
             }
         }
     }
     // Mostrar uma representação visual do mapa
-    printf("\n=== MAPA INICIAL (Pesos Aleatórios) ===\n");
+    printf("\n=== MAPA INICIAL (Pesos Aleatorios) ===\n");
 
-    for (i = 0; i < MAP_HEIGHT; i++)
+    for (x = 0; x < MAPA_LADO_X; x++)
     {
-        for (j = 0; j < MAP_WIDTH; j++)
+        for (y = 0; y < MAPA_LADO_Y; y++)
         {
             // Mostrar o primeiro peso (índice 0) de cada neurônio
-            printf("%.2f ", mapa[i][j][0]);
+            printf("%.2f ", mapa[x][y][1]);
         }
         printf("\n");
     }
-    
+
+    int v_x, v_y; // Coordenadas do vencedor (v)
+    for (int t = 1; t <= ITERACOES_MAX; t++)
+    {
+        int indice_selecionado = rand() % AMOSTRAS;
+        float min_distancia = INFINITY;
+        float alpha_t, R_t;
+
+        for (int x = 0; x < MAPA_LADO_X; x++)
+        {
+            for (int y = 0; y < MAPA_LADO_Y; y++)
+            {
+                float soma_quadrados = 0.0;
+                for (int d = 0; d < DIMENSOES; d++)
+                {
+                    soma_quadrados += pow(dados_entrada[indice_selecionado][d] - mapa[x][y][d], 2);
+                }
+                float dist = sqrt(soma_quadrados);
+
+                if (dist < min_distancia)
+                {
+                    min_distancia = dist;
+                    v_x = x;
+                    v_y = y;
+                }
+            }
+        }
+
+        alpha_t = ALPHA_INICIAL * exp(-(float)t / TEMPO_CONSTANTE);
+        R_t = RAIO_INICIAL * exp(-(float)t / TEMPO_CONSTANTE);
+
+        for (int i_x = 0; i_x < MAPA_LADO_X; i_x++)
+        {
+            for (int i_y = 0; i_y < MAPA_LADO_Y; i_y++)
+            {
+                float dist_quadrada_topologica = pow((float)i_x - v_x, 2) + pow((float)i_y - v_y, 2);
+
+                float h_ci = 0.0;
+                if (R_t <= 0.5)
+                    h_ci = (i_x == v_x && i_y == v_y) ? 1.0 : 0.0;
+                else
+                    h_ci = exp(-dist_quadrada_topologica / (2 * pow(R_t, 2)));
+
+                if (h_ci > 0.001)
+                {
+                    for (int d = 0; d < DIMENSOES; d++)
+                    {
+                        float fator_ajuste = alpha_t * h_ci;
+                        mapa[i_x][i_y][d] += fator_ajuste * (dados_entrada[indice_selecionado][d] - mapa[i_x][i_y][d]);
+                    }
+                }
+            }
+        }
+    }
+
+    printf("\n=== MAPA FINAL (Pesos ESPACIALMENTE ORDENADOS) ===\n");
+
+    for (x = 0; x < MAPA_LADO_X; x++)
+    {
+        for (y = 0; y < MAPA_LADO_Y; y++)
+        {
+            // Mostrar o primeiro peso (índice 0) de cada neurônio
+            printf("%.2f ", mapa[x][y][1]);
+        }
+        printf("\n");
+    }
+
     fclose(in);
     return 0;
 }
