@@ -112,7 +112,7 @@ int main()
             for (int y = 0; y < MAPA_LADO_Y; y++)
             {
                 float soma_quadrados = 0.0;
-                for (int d = 1; d < DIMENSOES; d++) // Pular classe (d=0)
+                for (int d = 1; d < DIMENSOES; d++)
                 {
                     float diff = dados_entrada[indice_selecionado][d] - mapa[x][y][d];
                     soma_quadrados += diff * diff;

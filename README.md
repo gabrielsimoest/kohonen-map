@@ -76,3 +76,10 @@ O dataset foi amplamente utilizado para **comparação de classificadores** em a
 - **1-NN (z-transformado)**: 96.1%
 
 Esses resultados foram obtidos utilizando a técnica *leave-one-out*.
+
+
+
+
+
+
+ano_norm,genero_Guerra,genero_Animao,genero_Noir,genero_Cult,genero_Mistrio,genero_Crime,genero_Terror,genero_Romance,genero_Comdia,genero_Ao,genero_Fico_Cientfica,genero_Msica,genero_Drama,genero_Suspense

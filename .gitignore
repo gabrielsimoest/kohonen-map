@@ -1,0 +1,8 @@
+*.exe
+*.obj
+*.pdb
+.vscode/settings.json
+.vscode/tasks.json
+.idea/vcs.xml
+.idea/kohonen-map.iml
+.idea/kohonen-map.iml
